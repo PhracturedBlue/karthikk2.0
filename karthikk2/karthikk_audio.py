@@ -14,12 +14,26 @@ from fallback_audio_cb import FallbackCallbackHandler
 TOP_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 RESOURCE_FILE = os.path.join(TOP_DIR, "resources/common.res")
 
+SAYINGS = [
+    "Sure.One second",
+    "Let me check on that",
+    "I can help with that",
+    ]
+
+QUERIES = [
+    " wants to know,",
+    " asked,",
+    "is wondering",
+    ]
+
+
 class HandleUser:
     """Handler for each user."""
 
-    def __init__(self, user, sayings, cbhandler):
+    def __init__(self, user, sayings, queries, cbhandler):
         self.user = user
         self.sayings = sayings
+        self.queries = queries
         self.cbhandler = cbhandler
         self.user_wav = flite("Hey {}".format(user))
 
@@ -30,11 +44,23 @@ class HandleUser:
     def ask_user(self, args):
         """Handle recorded audio"""
         fname = args[0]
+        from_user = args[1]
         saying = random.choice(self.sayings)
+        query = random.choice(self.queries)
+        from_wav = flite(from_user)
+        message = "Hey {}: {} {} ...".format(
+             self.user,
+             from_user,
+             query[1])
         if saying:
             self.cbhandler.play_audio(saying[0], saying[1])
             time.sleep(0.5)
-        self.cbhandler.play_audio([self.user_wav, fname], "Hey " + self.user + ": ...")
+        self.cbhandler.play_audio(
+            [self.user_wav,
+             from_wav,
+             query[0],
+             fname],
+            message)
 
 def _get_models(model_dir):
     """Get list of pmdl files."""
@@ -56,13 +82,10 @@ class AudioThread(Thread):
         model_dir = os.path.join(TOP_DIR, "models")
         sensitivity = 0.38
 
-        sayings = [
-            "Sure.One second",
-            "Let me check on that",
-            "I can help with that",
-            ]
-        sayings = [[flite(_msg), _msg] for _msg in sayings]
+        sayings = [[flite(_msg), _msg] for _msg in SAYINGS]
         sayings.append(None) # Allow for no saying
+
+        queries = [[flite(_msg), _msg] for _msg in QUERIES]
 
         signal.signal(signal.SIGINT, self.handler.signal_handler)
         self.detected_cb = []
@@ -71,7 +94,7 @@ class AudioThread(Thread):
         models = [model[1] for model in model_map]
 
         for model in model_map:
-            user_handler = HandleUser(model[0], sayings, handler)
+            user_handler = HandleUser(model[0], sayings, queries, handler)
             self.handler.add_user(model[0], user_handler.ask_user)
             self.detected_cb.append(user_handler.callback)
 

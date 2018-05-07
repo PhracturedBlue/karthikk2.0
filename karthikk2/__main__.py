@@ -82,12 +82,12 @@ class CallbackHandler:
             if not callbacks:
                 callbacks.append(self.user_map[self.user])
             fname_handler = random.choice(callbacks)
-        self.run_in_main_thread(fname_handler, fname)
+        self.run_in_main_thread(fname_handler, fname, self.user)
 
     def play_audio_from_main(self, wavs, message):
         self.run_in_main_thread(self.play_audio, wavs, message)
 
-    def faces_cb(self, pos):
+    def lookat(self, pos):
         """Handle camera face detection"""
         if pos:
            pos = sorted(pos, key=itemgetter(0))
@@ -98,6 +98,10 @@ class CallbackHandler:
         # else:
         #    self.visual_q[0].put(["lookat", None])
         self.faces = pos
+
+    def update_overlay(self, img):
+        """Update overlay image"""
+        self.visual_q[0].put(["update_overlay", img])
 
     def visual_exec(self, cmd):
         """Execute command in visual thread and block until complete"""
@@ -111,8 +115,8 @@ class CallbackHandler:
         # Note: This function executes in the visual thread
         if key == "q":
             os._exit(0)
-        elif key == "f":
-            self.visual_q[0].put(["fullscreen", None])
+        #elif key == "f":
+        #    self.visual_q[0].put(["fullscreen", None])
         elif key == "c":
             self.random_event_cb()
         elif key == "r":
@@ -126,7 +130,8 @@ class CallbackHandler:
     def play_audio(self, *args):
         """Play audio"""
         # This should only be called from one thread at a time
-
+        if len(args) == 1:
+            args = args[0]
         wavs = args[0]
         message = args[1]
        
@@ -150,7 +155,7 @@ def main():
     main_q = queue.Queue()
     handler = CallbackHandler(main_q, visual_q)
     karthikk_visual.handle_visuals(visual_q, handler.key_cb, handler.random_event_cb)
-    faces = karthikk_faces.handle_faces(True, handler.faces_cb)
+    faces = karthikk_faces.handle_faces(False, handler)
 
     audio = karthikk_audio.handle_audio(handler)
     print("Karthikk 2.0 Ready")

@@ -182,6 +182,9 @@ class Face:
         self.full_redraw = True
         self.message = None
         self.message_text = None
+        self.show_overlay = True
+        self.redraw_overlay = False
+        self.overlay = None
         self._recalculate()
 
     def _recalculate(self):
@@ -196,8 +199,12 @@ class Face:
         self.update_rect = [4*self.X, 2*self.Y, 8*self.X,4.3*self.Y+4]
         self._eye()
         self._mouth()
-        self.message = pygame.Surface([width-2*self.X, 2*self.Y], pygame.SRCALPHA)
+        if self.show_overlay:
+            self.message = pygame.Surface([width-self.X - 320, 2*self.Y], pygame.SRCALPHA)
+        else:
+            self.message = pygame.Surface([width-2*self.X, 2*self.Y], pygame.SRCALPHA)
         self.full_redraw = True
+        self.redraw_overlay = True
 
     def _face_outline(self):
         """Build face outline"""
@@ -332,8 +339,11 @@ class Face:
         if message:
             ret = primitives.drawText(self.message, message, self.foreground)
             print("Returned: {}".format(ret))
-        x = self.X
         y = 7 * self.Y
+        if self.show_overlay:
+            x = self.X / 2
+        else:
+            x = self.X
         self.surface.blit(self.message, [x, y])
         pygame.display.update([x, y, self.message.get_width(), self.message.get_height()])
 
@@ -359,6 +369,12 @@ class Face:
         """Set message to display"""
         print("Set Message");
         self.message_text = message
+
+    def update_overlay(self, overlay):
+        """Update overlay image"""
+        if self.show_overlay:
+            self.overlay = overlay
+            self.redraw_overlay = True
 
     def draw(self):
         """Draw face"""
@@ -424,6 +440,12 @@ class Face:
                 self.expression = None
                 self.last_expression_time = time.clock()
                 print("Expression Finished")
+        if self.show_overlay and self.overlay and self.redraw_overlay:
+            x = self.width - self.overlay.get_width()
+            y = self.height - self.overlay.get_height()
+            self.surface.blit( self.overlay, [x, y])
+            pygame.display.update([x, y, self.overlay.get_width(), self.overlay.get_height()])
+            self.redraw_overlay = False
 
     def show(self, fps=None):
         """Draw face on screen"""
@@ -459,19 +481,22 @@ class VisualThread(Thread):
         self.face = Face(self.scr, self.fps)
         self.face.set_talking(False if self.queue else True)
 
+    def toggle_fullscreen(self):
+        if self.scr.get_flags() & pygame.FULLSCREEN:
+            self.scr = pygame.display.set_mode(self.size)
+        else:
+            mode = pygame.display.list_modes()[0]
+            self.scr = pygame.display.set_mode(mode, pygame.FULLSCREEN)
+        self.face.surface = self.scr
+        self.face.set_expression(None)
+        #pygame.display.toggle_fullscreen()
+
     def handle_command(self, cmd):
         """Handle command from main thread"""
         if cmd[0] == "talk":
             self.face.set_talking(cmd[1])
         elif cmd[0] == "fullscreen":
-            if self.scr.get_flags() & pygame.FULLSCREEN:
-                self.scr = pygame.display.set_mode(self.size)
-            else:
-                mode = pygame.display.list_modes()[0]
-                self.scr = pygame.display.set_mode(mode, pygame.FULLSCREEN)
-            self.face.surface = self.scr
-            self.face.set_expression(None)
-            #pygame.display.toggle_fullscreen()
+            self.toggle_fullscreen()
         elif cmd[0] == "exec":
             cmd[1](self.scr)
             self.face.full_redraw = True
@@ -495,6 +520,8 @@ class VisualThread(Thread):
             self.face.set_lookat(cmd[1])
         elif cmd[0] == "message":
             self.face.set_message(cmd[1])
+        elif cmd[0] == "update_overlay":
+            self.face.update_overlay(cmd[1])
 
     def random_expression(self):
         """Choose a random expression"""
@@ -509,11 +536,15 @@ class VisualThread(Thread):
             elif event.type == pygame.KEYUP:
                 if event.key == pygame.K_e:
                     self.random_expression()
-                if event.key == pygame.K_t:
+                elif event.key == pygame.K_t:
                     self.face.talking = not self.face.talking
-                if event.key == pygame.K_i:
+                elif event.key == pygame.K_i:
                     print("fps: {}".format(self.clock.get_fps()))
-                if self.key_handler:
+                elif event.key == pygame.K_f:
+                    self.toggle_fullscreen()
+                elif event.key == pygame.K_o:
+                    self.face.show_overlay = not self.face.show_overlay
+                elif self.key_handler:
                     self.key_handler(pygame.key.name(event.key))
 
     def run(self):
