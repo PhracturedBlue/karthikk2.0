@@ -185,6 +185,8 @@ class Face:
         self.show_overlay = True
         self.redraw_overlay = False
         self.overlay = None
+        self.redraw_count = False
+        self.count = 0
         self._recalculate()
 
     def _recalculate(self):
@@ -203,8 +205,10 @@ class Face:
             self.message = pygame.Surface([width-self.X - 320, 2*self.Y], pygame.SRCALPHA)
         else:
             self.message = pygame.Surface([width-2*self.X, 2*self.Y], pygame.SRCALPHA)
+        self.count_surface = pygame.Surface([100, self.Y], pygame.SRCALPHA)
         self.full_redraw = True
         self.redraw_overlay = True
+        self.redraw_count = True
 
     def _face_outline(self):
         """Build face outline"""
@@ -347,6 +351,15 @@ class Face:
         self.surface.blit(self.message, [x, y])
         pygame.display.update([x, y, self.message.get_width(), self.message.get_height()])
 
+    def _show_count(self):
+        """Dispaly count"""
+        print("Show count {}".format(self.count))
+        self.count_surface.fill(self.background)
+        primitives.drawText(self.count_surface, str(self.count), self.foreground)
+        self.surface.blit(count, [self.width-self.count_surface.get_width(), 0])
+        pygame.display.update([self.width-self.count_surface.get_width(), 0,
+                               self.count_surface.get_width(), self.count_surface.get_height()])
+
     def set_talking(self, talking):
         """Set talling state."""
         self.talking = talking
@@ -376,6 +389,12 @@ class Face:
             self.overlay = overlay
             self.redraw_overlay = True
 
+    def update_overlay(self, count):
+        """Update count"""
+        self.count = count
+        self.redraw_count = True
+
+
     def draw(self):
         """Draw face"""
         self._recalculate()
@@ -388,6 +407,13 @@ class Face:
                 title,
                 [(self.width - title.get_width()) / 2,
                  (self.Y - title.get_height()) / 2])
+
+            countmsg = pygame.Surface([100, self.Y], pygame.SRCALPHA)
+            primitives.drawText(countmsg, "# cats id'd today", self.foreground)
+            self.surface.blit(
+                countmsg,
+                [self.width - countmsg.get_width() - self.count_surface.get_width(), 0])
+
             self.surface.blit(outline, [3*self.X, self.Y])
             pygame.display.flip()
             self.full_redraw = False     
@@ -402,6 +428,10 @@ class Face:
             else:
                 self.last_message_time = time.clock()
             self.message_text = None
+
+        if self.redraw_count:
+            self._show_count()
+            self.redraw_count = False
 
         if self.last_message_time and time.clock() - self.last_message_time > 5:
             self._show_message(self.default_message)
@@ -522,6 +552,8 @@ class VisualThread(Thread):
             self.face.set_message(cmd[1])
         elif cmd[0] == "update_overlay":
             self.face.update_overlay(cmd[1])
+        elif cmd[0] == "update_count":
+            self.face.update_count(cmd[1])
 
     def random_expression(self):
         """Choose a random expression"""

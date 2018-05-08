@@ -104,6 +104,7 @@ class HotwordDetector(object):
             resource_filename=resource.encode(), model_str=model_str.encode())
         self.detector.SetAudioGain(audio_gain)
         self.num_hotwords = self.detector.NumHotwords()
+        self.force_recording = None
 
         if len(decoder_model) > 1 and len(sensitivity) == 1:
             sensitivity = sensitivity * self.num_hotwords
@@ -117,6 +118,9 @@ class HotwordDetector(object):
 
         self.ring_buffer = RingBuffer(
             self.detector.NumChannels() * self.detector.SampleRate() * 5)
+
+    def start_recording(self, callback):
+        self.force_recording = callback
 
     def start(self, detected_callback=play_audio_file,
               interrupt_check=lambda: False,
@@ -200,7 +204,7 @@ class HotwordDetector(object):
 
             #small state machine to handle recording of phrase after keyword
             if state == "PASSIVE":
-                if status > 0: #key word found
+                if status > 0 || self.force_recording: #key word found
                     self.recorded_data = []
                     self.recorded_data.append(data)
                     silentCount = 0
@@ -209,12 +213,18 @@ class HotwordDetector(object):
                     message += time.strftime("%Y-%m-%d %H:%M:%S",
                                          time.localtime(time.time()))
                     logger.info(message)
-                    callback = detected_callback[status-1]
+                    if status > 0:
+                        callback = detected_callback[status-1]
+                    else:
+                        callback = self.force_recording
+
                     if callback is not None:
                         callback()
 
                     if audio_recorder_callback is not None:
                         state = "ACTIVE"
+
+                    self.force_recording = False
                     continue
 
             elif state == "ACTIVE":

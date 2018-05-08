@@ -78,9 +78,9 @@ class CallbackHandler:
             callbacks = []
             for user in self.user_map:
                 if user != self.user:
-                    callbacks.append(self.user_map[user])
+                    callbacks.append(self.user_map[user].add_user)
             if not callbacks:
-                callbacks.append(self.user_map[self.user])
+                callbacks.append(self.user_map[self.user].add_user)
             fname_handler = random.choice(callbacks)
         self.run_in_main_thread(fname_handler, fname, self.user)
 
@@ -103,6 +103,10 @@ class CallbackHandler:
         """Update overlay image"""
         self.visual_q[0].put(["update_overlay", img])
 
+    def update_counter(self, count):
+        """Update counter"""
+        self.visual_q[0].put(["update_count", count])
+
     def visual_exec(self, cmd):
         """Execute command in visual thread and block until complete"""
         print("Executing command")
@@ -121,12 +125,15 @@ class CallbackHandler:
             self.random_event_cb()
         elif key == "r":
             self.run_in_main_thread(record_wrap.run_record, None)
+        elif key == "l":
+            user = random.choice(self.user_map.keys())
+            self.user_map[user].force_recording()
 
     def random_event_cb(self):
         """Execute a random event"""
         print("Executing random event")
         self.run_in_main_thread(random.choice(self.random_callbacks), None)
-    
+
     def play_audio(self, *args):
         """Play audio"""
         # This should only be called from one thread at a time
@@ -134,7 +141,7 @@ class CallbackHandler:
             args = args[0]
         wavs = args[0]
         message = args[1]
-       
+
         if not isinstance(wavs, list):
             wavs = [wavs]
 
@@ -155,7 +162,7 @@ def main():
     main_q = queue.Queue()
     handler = CallbackHandler(main_q, visual_q)
     karthikk_visual.handle_visuals(visual_q, handler.key_cb, handler.random_event_cb)
-    faces = karthikk_faces.handle_faces(False, handler)
+    karthikk_faces.handle_faces(False, handler)
 
     audio = karthikk_audio.handle_audio(handler)
     print("Karthikk 2.0 Ready")
