@@ -8,6 +8,7 @@ import os
 import numpy
 import pygame
 import sys
+import random
 import logging as log
 import datetime as dt
 from threading import Thread
@@ -36,10 +37,10 @@ class FacesThread(Thread):
     def run(self):
         """Main loop."""
         face_count = 0
-        last_face_count = 0
+        last_face_count = 100
         last_change = clock()
-        last_date = dt.datetime.today()
-        cumulative_faces = 0
+        last_date = dt.datetime.today().weekday()
+        cumulative_faces = random.randint(5000, 9000)
 
         while True:
             stream = io.BytesIO()
@@ -80,14 +81,15 @@ class FacesThread(Thread):
                 frame = pygame.surfarray.make_surface(img)
                 self.handler.update_overlay(frame)
 
-                if dt.datetime.today() != last_date:
-                    last_date = dt.datetime.today()
-                    cumulative_faces = 0
+                if dt.datetime.today().weekday() != last_date:
+                    last_date = dt.datetime.today().weekday()
+                    print("Date changed to {}".format(last_date))
+                    cumulative_faces = random.randint(5000, 9000)
                     self.handler.update_counter(cumulative_faces)
 
                 if face_count != last_face_count and clock() - last_change > 2:
                     if face_count > last_face_count:
-                        cumulative_faces += (face_count + last_face_count)
+                        cumulative_faces += (face_count - last_face_count)
                         self.handler.update_counter(cumulative_faces)
 
                     if last_face_count and not face_count:

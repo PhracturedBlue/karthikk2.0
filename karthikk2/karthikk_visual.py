@@ -146,7 +146,7 @@ class Face:
         """Initialize face attributes."""
         # pylint: disable=too-many-arguments
         self.title = "Karthikk 2.0"
-        self.default_message = "You can ask me a question by saying 'Hey Karthikk'.  My hearing isn't so good, so you may need to repeat yourself.  My eyes will light up if I can hear you"
+        self.default_message = "Ask me a question by saying 'Hey Karthikk'.  Sometimes I get distracted, so press the space-bar to get my attention.  My eyes will light up if I can hear you"
         self.surface = surface
         self.fps = fps
         self.linewidth = 5
@@ -356,7 +356,8 @@ class Face:
         print("Show count {}".format(self.count))
         self.count_surface.fill(self.background)
         primitives.drawText(self.count_surface, str(self.count), self.foreground)
-        self.surface.blit(count, [self.width-self.count_surface.get_width(), 0])
+        self.surface.blit(self.count_surface,
+                          [self.width-self.count_surface.get_width(), 0])
         pygame.display.update([self.width-self.count_surface.get_width(), 0,
                                self.count_surface.get_width(), self.count_surface.get_height()])
 
@@ -389,7 +390,7 @@ class Face:
             self.overlay = overlay
             self.redraw_overlay = True
 
-    def update_overlay(self, count):
+    def update_count(self, count):
         """Update count"""
         self.count = count
         self.redraw_count = True
@@ -408,8 +409,8 @@ class Face:
                 [(self.width - title.get_width()) / 2,
                  (self.Y - title.get_height()) / 2])
 
-            countmsg = pygame.Surface([100, self.Y], pygame.SRCALPHA)
-            primitives.drawText(countmsg, "# cats id'd today", self.foreground)
+            countmsg = pygame.Surface([130, self.Y], pygame.SRCALPHA)
+            primitives.drawText(countmsg, "cats id'd today", self.foreground)
             self.surface.blit(
                 countmsg,
                 [self.width - countmsg.get_width() - self.count_surface.get_width(), 0])
@@ -417,6 +418,8 @@ class Face:
             self.surface.blit(outline, [3*self.X, self.Y])
             pygame.display.flip()
             self.full_redraw = False     
+            self.redraw_count = True
+            self.last_message_time = time.clock()
         t_start = time.perf_counter()
         pygame.draw.rect(self.surface, self.background, self.update_rect)
         t_bg = time.perf_counter()
@@ -598,7 +601,7 @@ class VisualThread(Thread):
                     if (delta > 120 or
                             (delta > 20 and random.randrange(0, 120 * self.fps) < 4)):
                         self.random_expression()
-                if not self.face.talking and self.random_event_cb:
+                if not self.face.talking and not self.face.listening and self.random_event_cb:
                     ok = random.randint(0, int(self.fps * self.random_event_time))
                     if ok == 0:
                         self.random_event_cb()

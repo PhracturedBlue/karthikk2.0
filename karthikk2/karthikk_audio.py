@@ -44,7 +44,7 @@ class HandleUser:
 
     def force_recording(self):
         """Force recording to start"""
-        self.detector.force_recording(self.callback)
+        self.detector.start_recording(self.callback)
 
     def ask_user(self, args):
         """Handle recorded audio"""
@@ -53,17 +53,19 @@ class HandleUser:
         saying = random.choice(self.sayings)
         query = random.choice(self.queries)
         from_wav = flite(from_user)
-        message = "Hey {}: {} {} ...".format(
-             self.user,
-             from_user,
-             query[1])
+        #message = "Hey {}: {} {} ...".format(
+        #     self.user,
+        #     from_user,
+        #     query[1])
+        message = "Hey {}: ...".format(
+             self.user)
         if saying:
             self.cbhandler.play_audio(saying[0], saying[1])
             time.sleep(0.5)
         self.cbhandler.play_audio(
             [self.user_wav,
-             from_wav,
-             query[0],
+             # from_wav,
+             # query[0],
              fname],
             message)
 

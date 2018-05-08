@@ -204,7 +204,7 @@ class HotwordDetector(object):
 
             #small state machine to handle recording of phrase after keyword
             if state == "PASSIVE":
-                if status > 0 || self.force_recording: #key word found
+                if status > 0 or self.force_recording: #key word found
                     self.recorded_data = []
                     self.recorded_data.append(data)
                     silentCount = 0

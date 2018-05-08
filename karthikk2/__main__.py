@@ -78,9 +78,9 @@ class CallbackHandler:
             callbacks = []
             for user in self.user_map:
                 if user != self.user:
-                    callbacks.append(self.user_map[user].add_user)
+                    callbacks.append(self.user_map[user].ask_user)
             if not callbacks:
-                callbacks.append(self.user_map[self.user].add_user)
+                callbacks.append(self.user_map[self.user].ask_user)
             fname_handler = random.choice(callbacks)
         self.run_in_main_thread(fname_handler, fname, self.user)
 
@@ -116,6 +116,7 @@ class CallbackHandler:
 
     def key_cb(self, key):
         """Got keypress"""
+        print("Key: '{}'".format(key))
         # Note: This function executes in the visual thread
         if key == "q":
             os._exit(0)
@@ -125,8 +126,8 @@ class CallbackHandler:
             self.random_event_cb()
         elif key == "r":
             self.run_in_main_thread(record_wrap.run_record, None)
-        elif key == "l":
-            user = random.choice(self.user_map.keys())
+        elif key == "space":
+            user = random.choice(list(self.user_map.keys()))
             self.user_map[user].force_recording()
 
     def random_event_cb(self):
