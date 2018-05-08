@@ -38,6 +38,8 @@ class FacesThread(Thread):
         face_count = 0
         last_face_count = 0
         last_change = clock()
+        last_date = dt.datetime.today()
+        cumulative_faces = 0
 
         while True:
             stream = io.BytesIO()
@@ -68,8 +70,6 @@ class FacesThread(Thread):
                 log.info("faces: "+str(len(faces))+" at "+str(dt.datetime.now()))
                 last_change = clock()
                 
-                
-
             if self.handler:
                 pos = []
                 for (x, y, w, h) in faces:
@@ -79,7 +79,17 @@ class FacesThread(Thread):
                 img = numpy.rot90(img1)
                 frame = pygame.surfarray.make_surface(img)
                 self.handler.update_overlay(frame)
+
+                if dt.datetime.today() != last_date:
+                    last_date = dt.datetime.today()
+                    cumulative_faces = 0
+                    self.handler.update_counter(cumulative_faces)
+
                 if face_count != last_face_count and clock() - last_change > 2:
+                    if face_count > last_face_count:
+                        cumulative_faces += (face_count + last_face_count)
+                        self.handler.update_counter(cumulative_faces)
+
                     if last_face_count and not face_count:
                         message = "Where did the kitties go?"
                     elif last_face_count > 1 and face_count == 1:

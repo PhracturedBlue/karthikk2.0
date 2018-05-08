@@ -30,8 +30,9 @@ QUERIES = [
 class HandleUser:
     """Handler for each user."""
 
-    def __init__(self, user, sayings, queries, cbhandler):
+    def __init__(self, user, detector, sayings, queries, cbhandler):
         self.user = user
+        self.detector = detector
         self.sayings = sayings
         self.queries = queries
         self.cbhandler = cbhandler
@@ -40,6 +41,10 @@ class HandleUser:
     def callback(self):
         """Heard user."""
         self.cbhandler.set_user(self.user)
+
+    def force_recording(self):
+        """Force recording to start"""
+        self.detector.force_recording(self.callback)
 
     def ask_user(self, args):
         """Handle recorded audio"""
@@ -93,13 +98,14 @@ class AudioThread(Thread):
         model_map = _get_models(model_dir)
         models = [model[1] for model in model_map]
 
-        for model in model_map:
-            user_handler = HandleUser(model[0], sayings, queries, handler)
-            self.handler.add_user(model[0], user_handler.ask_user)
-            self.detected_cb.append(user_handler.callback)
-
         self.detector = snowboydecoder.HotwordDetector(
             models, resource=RESOURCE_FILE, sensitivity=sensitivity)
+
+        for model in model_map:
+            user_handler = HandleUser(model[0], self.detector, sayings, queries, handler)
+            self.handler.add_user(model[0], user_handler)
+            self.detected_cb.append(user_handler.callback)
+
 
     def stop(self):
         """Stop and terminate this thread"""
