@@ -75,7 +75,8 @@ class FacesThread(Thread):
                 for (x, y, w, h) in faces:
                     pos.append([1.0 - (x+w/2)/self.width, (y+h/2)/self.height])
                 self.handler.lookat(pos)
-                img = numpy.rot90(resized_image)
+                img1 = cv2.cvtColor(resized_image, cv2.COLOR_BGR2RGB)
+                img = numpy.rot90(img1)
                 frame = pygame.surfarray.make_surface(img)
                 self.handler.update_overlay(frame)
                 if face_count != last_face_count and clock() - last_change > 2:

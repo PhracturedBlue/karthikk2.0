@@ -184,14 +184,11 @@ def main(keyword):
     name = input("Please type your first name: ")
     if not name:
         return
-    idx = 1
-    uniqname = name
-    wavdir = os.path.join(TOP_DIR, "models/raw", uniqname)
-    while os.path.exists(wavdir):
-        uniqname = "{}_{}".format(name, idx)
-        wavdir = os.path.join(TOP_DIR, "models/raw", uniqname)
-        idx += 1
-    os.mkdir(wavdir)
+    wavdir = os.path.join(TOP_DIR, "models/raw", name)
+    if os.path.exists(wavdir):
+        os.system("/bin/rm {}/*.wav".format(wavdir))
+    else:
+        os.mkdir(wavdir)
     print("You will need to say '{}' 3 times".format(keyword))
     files = []
     for count in ["1st", "2nd", "3rd"]:
@@ -199,7 +196,28 @@ def main(keyword):
         msg = "{} time: Please say '{}' into the microphone".format(count, keyword)
         get_recording(recorder, msg, fname)
         files.append(fname)
-    os.system("python2 {}/train.py {} {} {} {}/models/{}.pmdl".format(
-        TOP_DIR, files[0], files[1], files[2], TOP_DIR, uniqname))
+
+    pmdl = "{}/models/{}.pmdl".format(TOP_DIR, name)
+    temp_pmdl = "{}/temp/temp.pmdl".format(TOP_DIR)
+    if os.path.exists(temp_pmdl):
+        os.unlink(temp_pmdl)
+    print("Training model...please wait")
+    os.system("python2 {}/train.py {} {} {} {}".format(
+        TOP_DIR, files[0], files[1], files[2], temp_pmdl))
+    if not os.path.exists(temp_pmdl):
+        print("Training failed")
+        return
+    if os.path.exists(pmdl):
+        old_dir = "{}/models/old".format(TOP_DIR)
+        if not os.path.exists(old_dir):
+            os.mkdir(old_dir)
+        idx = 1
+        old_file = "{}/{}.pmdl".format(old_dir, name)
+        while os.path.exists(old_file):
+            old_file = "{}/{}_{}.pmdl".format(old_dir, name, idx)
+            idx += 1
+        os.rename(pmdl, old_file)
+    os.rename(temp_pmdl, pmdl)
+        
 
 main("Hey Karthikk")

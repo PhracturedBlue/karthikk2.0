@@ -164,6 +164,7 @@ def main():
         # If we get here we need to stop the audio thread, run the cmd, and restart it
         audio.stop()
         audio.join()
+        audio = None
         cmd(arg)
         audio = karthikk_audio.handle_audio(handler)
 
