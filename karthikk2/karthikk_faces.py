@@ -32,6 +32,14 @@ class FacesThread(Thread):
         self.camera = picamera.PiCamera()
         self.camera.resolution = (self.width, self.height)
 
+        monitor = pygame.display.Info()
+        print("{}x{}".format(monitor.current_w, monitor.current_h))
+        if monitor.current_h < 800:
+            self.display_h = 100
+            self.display_w = 133
+        else:
+            self.display_h = 240
+            self.display_w = 320
 
 
     def run(self):
@@ -64,7 +72,7 @@ class FacesThread(Thread):
             for (x, y, w, h) in faces:
                 cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
             # Display the resulting frame
-            resized_image = cv2.resize(frame, (320, 240))
+            resized_image = cv2.resize(frame, (self.display_w, self.display_h))
 
             if face_count != len(faces):
                 face_count = len(faces)

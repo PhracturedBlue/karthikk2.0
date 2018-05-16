@@ -202,7 +202,9 @@ class Face:
         self._eye()
         self._mouth()
         if self.show_overlay:
-            self.message = pygame.Surface([width-self.X - 320, 2*self.Y], pygame.SRCALPHA)
+            monitor = pygame.display.Info()
+            overlay_w = 320 if monitor.current_h >= 800 else 133
+            self.message = pygame.Surface([width-self.X - overlay_w, 2*self.Y], pygame.SRCALPHA)
         else:
             self.message = pygame.Surface([width-2*self.X, 2*self.Y], pygame.SRCALPHA)
         self.count_surface = pygame.Surface([100, self.Y], pygame.SRCALPHA)
