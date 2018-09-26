@@ -167,6 +167,7 @@ def main():
 
     audio = karthikk_audio.handle_audio(handler)
     print("Karthikk 2.0 Ready")
+    visual_q[0].put(["fullscreen", None])
     while True:
         cmd, arg = main_q.get()
         # If we get here we need to stop the audio thread, run the cmd, and restart it
